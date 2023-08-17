@@ -1,13 +1,13 @@
 apiVersion: kibana.k8s.elastic.co/v1
 kind: Kibana
 metadata:
-  name: kibana
+  name: kibana-__VERSION__
   namespace: logging
 spec:
   version: 8.9.0
   count: 1
   elasticsearchRef:
-    name: elasticsearch
+    name: elasticsearch-__VERSION__
     namespace: logging
   podTemplate:
     spec:

@@ -44,8 +44,17 @@ jobs:
                 echo "currentVersion=$(echo $currentVersion)" >> $GITHUB_OUTPUT
             
             - name: Install helm & create logging namespace
-              uses: "./.github/template/helm"    
-            # Install ECK which will add new CRD(Custom Resources Definitions such us elasticsearch we will use to set up the ELK stack)
+              uses: "./.github/template/helm"  
+              
+            - name: Update manifest files with the current version
+              uses: cschleiden/replace-tokens@v1
+              with: 
+                files: '["manifests/**", "manifests/elasticsearch/**"]'
+                tokenPrefix: __
+                tokenSuffix: __
+              env:
+                VERSION: ${{ steps.release.outputs.currentVersion }}
+
             - name: Install ECK
               uses: "./.github/template/install_release"
               with:
