@@ -1,0 +1,71 @@
+name: Install and configure ECK in the GKE cluster
+run-name: Install and configure ECK
+on:
+    push:
+        branches:
+            - 'main'
+            - 'feature/**'
+jobs:
+    InstallAndConfigureECK:
+        runs-on: ubuntu-latest
+        steps:
+
+            - name: Checkout code
+              uses: actions/checkout@master
+
+            - name: Authenticate to GKE
+              uses: "./.github/template/authenticate" 
+              with:
+                gcloud_key: ${{ secrets.GCLOUD_KEY }}
+                cluster_name: ${{ env.CLUSTER_NAME }}
+                cluster_zone: ${{ env.CLUSTER_ZONE }}
+                project_name: ${{ env.PROJECT_NAME }}
+            
+            - name: Create release
+              id: create_release
+              uses: './.github/template/release'
+              env:
+                GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+              with:
+                product: logging
+                version: ${{ vars.CURRENT_VERSION }}
+             
+            - name: Replace points by dashes in release string
+              id: release
+              run: |
+                currentVersion=$(echo ${{ vars.CURRENT_VERSION }} | sed 's/\./-/g')
+                echo "currentVersion=$(echo $currentVersion)" >> $GITHUB_OUTPUT
+            
+                - name: Install helm
+                uses: "./.github/template/helm"    
+            # Install ECK which will add new CRD(Custom Resources Definitions such us elasticsearch we will use to set up the ELK stack)
+            - name: Install ECK
+              uses: "./.github/template/install_release"
+              with:
+                repo: https://helm.elastic.co
+                product: elastic-operator
+                version: ${{ steps.release.outputs.currentVersion }}
+                chart: elastic/eck-operator
+            
+            - name: Install & configure Elasticsearch
+              run: |
+                kubectl apply -f manifests/elasticsearch    
+
+            - name: Get Elasticsearch PWD
+              id: elastic_pwd
+              run: |
+                elasticPwd=$(kubectl get secret elasticsearch-es-elastic-user -n logging -o=jsonpath='{.data.elastic}' | base64 --decode)      
+                echo "elasticPwd=$(echo $elasticPwd)" >> $GITHUB_OUTPUT
+                
+            - name: Provision the elasticsearch password in the logstash manifest file
+              uses: cschleiden/replace-tokens@v1
+              with: 
+                files: '["manifests/logstash-manifest.yml*"]'
+                tokenPrefix: __
+                tokenSuffix: __
+              env:
+                ELASTIC_PASSWORD: ${{ steps.elastic_pwd.outputs.elasticPwd }}
+
+            - name: Install and configure Beat, Logstash & Kibana
+              run: |
+                kubectl apply -f manifests/
