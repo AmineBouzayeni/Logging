@@ -14,6 +14,7 @@ env:
 jobs:
     InstallAndConfigureECK:
         runs-on: ubuntu-latest
+        permissions: write-all
         steps:
 
             - name: Checkout code
@@ -42,8 +43,8 @@ jobs:
                 currentVersion=$(echo ${{ vars.CURRENT_VERSION }} | sed 's/\./-/g')
                 echo "currentVersion=$(echo $currentVersion)" >> $GITHUB_OUTPUT
             
-                - name: Install helm
-                uses: "./.github/template/helm"    
+            - name: Install helm & create logging namespace
+              uses: "./.github/template/helm"    
             # Install ECK which will add new CRD(Custom Resources Definitions such us elasticsearch we will use to set up the ELK stack)
             - name: Install ECK
               uses: "./.github/template/install_release"
