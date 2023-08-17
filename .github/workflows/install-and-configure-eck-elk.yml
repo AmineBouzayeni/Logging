@@ -12,7 +12,7 @@ env:
   PROJECT_NAME: teolia-school-devops 
            
 jobs:
-    InstallAndConfigureECK:
+    InstallAndConfigureECKandELK:
         runs-on: ubuntu-latest
         permissions: write-all
         steps:
@@ -52,7 +52,8 @@ jobs:
                 repo: https://helm.elastic.co
                 product: elastic-operator
                 version: ${{ steps.release.outputs.currentVersion }}
-                chart: elastic/eck-operator
+                chart: elastic-operator/eck-operator
+                values_path: "empty"
             
             - name: Install & configure Elasticsearch
               run: |
