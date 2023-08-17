@@ -1,5 +1,5 @@
-name: Install and configure ECK in the GKE cluster
-run-name: Install and configure ECK
+name: Install and configure ECK & ELK stack in the GKE cluster
+run-name: Install and configure ECK & ELK stack
 on:
     push:
         branches:
