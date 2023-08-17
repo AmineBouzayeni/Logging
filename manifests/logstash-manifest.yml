@@ -7,7 +7,7 @@ spec:
   count: 1
   elasticsearchRefs:
     - name: elasticsearch-__VERSION__
-      clusterName: elasticsearch-__VERSION__
+      clusterName: elasticsearch
   version: 8.9.0
   pipelines:
     - pipeline.id: main

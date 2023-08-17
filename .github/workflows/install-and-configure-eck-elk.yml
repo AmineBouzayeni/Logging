@@ -72,7 +72,7 @@ jobs:
             - name: Get Elasticsearch PWD
               id: elastic_pwd
               run: |
-                while [[ $(kubectl get secrets -n logging | grep -c elasticsearch-es-elastic-user) != 1 ]]; do
+                while [[ $(kubectl get secrets -n logging | grep -c elasticsearch-${{ steps.release.outputs.currentVersion }}-es-elastic-user) != 1 ]]; do
                   echo "Still waiting for secret creation"
                 done
                 elasticPwd=$(kubectl get secret elasticsearch-${{ steps.release.outputs.currentVersion }}-es-elastic-user -n logging -o=jsonpath='{.data.elastic}' | base64 --decode)      
