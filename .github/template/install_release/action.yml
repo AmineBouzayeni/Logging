@@ -21,11 +21,16 @@ runs:
       run: |
         helm repo add ${{ inputs.product }} ${{ inputs.repo }}
         helm repo update
-        if [[ $(helm ls -n logging --short --filter '${{ inputs.product }}' | grep -c ${{ inputs.product }}) != 0 ]]
+        if [[ $(helm ls -n logging --short --filter '${{ inputs.product }}' | grep -c ${{ inputs.version }}) == 1 ]]
           then
-              helm ls -n logging --short --filter '${{ inputs.product }}' | xargs -L1 helm delete -n logging
-          else
-              echo "No previous release to uninstall. Continuing."
+              echo "The same version exists. Skipping installation."
+              exit 0
+        elif [[ $(helm ls -n logging --short --filter '${{ inputs.product }}' | grep -c ${{ inputs.product }}) == 1 ]]
+          then    
+              echo "A previpous release exist. Uninstalling."
+              helm ls -n monitoring --short --filter '${{ inputs.product }}' | xargs -L1 helm delete -n monitoring
+        else    
+              echo "No release exits at all. Continuing."
         fi
         if [[ ${{ inputs.values_path }} != "empty" ]]
           then

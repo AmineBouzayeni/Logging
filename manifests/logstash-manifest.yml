@@ -27,7 +27,7 @@ spec:
         }
   # Create service logstash-ls-beats:5044 to be reached from filebeat      
   services:
-    - name: beats-__VERSION__
+    - name: beats
       service:
         spec:
           type: NodePort
