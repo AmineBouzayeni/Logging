@@ -17,6 +17,15 @@ spec:
             port => 5044
           }
         }
+        filter {
+          grok {
+            match => { "message" => [
+              "%{IP:client_ip} - - [%{DATE:date}] "%{WORD:method} %{URIPATHPARAM:request_path} %{WORD:http_version}" %{NUMBER:response_code} %{NUMBER:request_size} %{NUMBER:response_time}"
+              ,"[%{DATE:date}] "%{WORD:method} %{URIPATHPARAM:request_path} %{WORD:http_version}" %{NUMBER:response_code} %{NUMBER:size} "-" "%{WORD: google_hc}" "-""
+              ,"%{WORD:log_level}:%{WORD:units_of_work}, %{WORD:updating_counter_info}"
+              ] }
+            }
+          }
         output {
           elasticsearch {
             hosts => [ "https://elasticsearch-__VERSION__-es-internal-http:9200" ]
