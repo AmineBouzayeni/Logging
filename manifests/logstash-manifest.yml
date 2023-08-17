@@ -6,11 +6,11 @@ metadata:
 spec:
   count: 1
   elasticsearchRefs:
-    - name: elasticsearch-__VERSION__
+    - name: elasticsearch-__VERSION__  # Reference the elasticsearch cluster
       clusterName: elasticsearch
   version: 8.9.0
   pipelines:
-    - pipeline.id: main
+    - pipeline.id: main # Inputs: Listen to filebeat on port 5044. Output: to elasticsearch
       config.string: |
         input {
           beats {
@@ -25,6 +25,7 @@ spec:
             ssl_certificate_verification => false
           }
         }
+  # Create service logstash-ls-beats:5044 to be reached from filebeat      
   services:
     - name: beats-__VERSION__
       service:

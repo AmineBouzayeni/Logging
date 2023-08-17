@@ -46,10 +46,10 @@ jobs:
             - name: Install helm & create logging namespace
               uses: "./.github/template/helm"  
               
-            - name: Update manifest files with the current version
+            - name: Update elastic search manifest files with the current version
               uses: cschleiden/replace-tokens@v1
               with: 
-                files: '["manifests/**", "manifests/elasticsearch/**"]'
+                files: '["manifests/elasticsearch/**"]'
                 tokenPrefix: __
                 tokenSuffix: __
               env:
@@ -66,7 +66,15 @@ jobs:
             
             - name: Install & configure Elasticsearch
               run: |
-                cat manifests/elasticsearch/elasticsearch-manifest.yml
+                # Delete previous version
+                if [[ $(kubectl get elasticsearch -n logging | grep -c ${{ steps.release.outputs.currentVersion }}) ]]
+                  then
+                    echo "It's an update. No deletion needed."
+                else
+                  echo "deleting previous version"    
+                  kubectl delete elasticsearch-${{ steps.release.outputs.currentVersion }}
+                fi  
+                # Install newer version or updating
                 kubectl apply -f manifests/elasticsearch    
 
             - name: Get Elasticsearch PWD
@@ -76,17 +84,43 @@ jobs:
                   echo "Still waiting for secret creation"
                 done
                 elasticPwd=$(kubectl get secret elasticsearch-${{ steps.release.outputs.currentVersion }}-es-elastic-user -n logging -o=jsonpath='{.data.elastic}' | base64 --decode)      
+                echo $elasticPwd
                 echo "elasticPwd=$(echo $elasticPwd)" >> $GITHUB_OUTPUT
                 
-            - name: Provision the elasticsearch password in the logstash manifest file
+            - name: Update the manifests files with current version & provision the elasticsearch password for the logstash manifest file
               uses: cschleiden/replace-tokens@v1
               with: 
-                files: '["manifests/logstash-manifest.yml"]'
+                files: '["manifests/**"]'
                 tokenPrefix: __
                 tokenSuffix: __
               env:
                 ELASTIC_PASSWORD: ${{ steps.elastic_pwd.outputs.elasticPwd }}
+                VERSION: ${{ steps.release.outputs.currentVersion }}
 
             - name: Install and configure Beat, Logstash & Kibana
               run: |
+                cat manifests/logstash-manifest.yml
+                # Delete components previous versions
+                if [[ $(kubectl get beat -n logging | grep -c ${{ steps.release.outputs.currentVersion }}) ]]
+                  then
+                    echo "It's an update. No deletion needed."
+                else
+                  echo "deleting previous version"    
+                  kubectl delete beat-${{ steps.release.outputs.currentVersion }}
+                fi
+                if [[ $(kubectl get kibana -n logging | grep -c ${{ steps.release.outputs.currentVersion }}) ]]
+                  then
+                    echo "It's an update. No deletion needed."
+                else
+                  echo "deleting previous version"    
+                  kubectl delete kibana-${{ steps.release.outputs.currentVersion }}
+                fi 
+                if [[ $(kubectl get logstash -n logging | grep -c ${{ steps.release.outputs.currentVersion }}) ]]
+                  then
+                    echo "It's an update. No deletion needed."
+                else
+                  echo "deleting previous version"    
+                  kubectl delete logstash-${{ steps.release.outputs.currentVersion }}
+                fi
+                # Install or upgrade the components.
                 kubectl apply -f manifests/

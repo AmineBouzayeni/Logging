@@ -1,3 +1,4 @@
+# Create filebeat on each node
 apiVersion: beat.k8s.elastic.co/v1beta1
 kind: Beat
 metadata:
@@ -18,8 +19,8 @@ spec:
   daemonSet:
     podTemplate:
       spec:
-        dnsPolicy: ClusterFirstWithHostNet
-        hostNetwork: true
+        dnsPolicy: ClusterFirstWithHostNet # Les pods configurés comme ça doivent avoir ClusterFirstWithHostNet comme DnsPolicy
+        hostNetwork: true # HostNetwork allows a pod to use the node network namespace. Doing so gives the pod access to any service running on localhost of the host.
         securityContext:
           runAsUser: 0
         containers:
@@ -34,10 +35,10 @@ spec:
         volumes:
         - name: varlogcontainers
           hostPath:
-            path: /var/log/containers
+            path: /var/log/containers # Volume to be mounted from containers to grab their logs
         - name: varlogpods
           hostPath:
-            path: /var/log/pods
+            path: /var/log/pods # Volume to be mounted from pods to take pods logs
         - name: varlibdockercontainers
           hostPath:
-            path: /var/lib/docker/containers
+            path: /var/lib/docker/containers # Volume to be mounted from container to get docker storage volume logs

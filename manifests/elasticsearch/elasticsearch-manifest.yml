@@ -5,7 +5,8 @@ metadata:
   namespace: logging
 spec:
   version: 8.9.0
-  volumeClaimDeletePolicy: DeleteOnScaledownAndClusterDeletion # Delete this persistant volume when scale down or the cluster is deleted
+  # By default elasticsearch create a persistant volume to prevent the deletion of data in case the cluster of es is deleted accidently
+  volumeClaimDeletePolicy: DeleteOnScaledownAndClusterDeletion # Delete this persistant volume when scale down or the cluster is deleted(when the cluster is deleted?)
   nodeSets:
   - name: elasticsearch
     count: 1
@@ -17,7 +18,7 @@ spec:
         name: elasticsearch-data # Do not change this name unless you set up a volume mount for the data path.
       spec:
         accessModes:
-        - ReadWriteOnce
+        - ReadWriteOnce # Read write by a single node.
         resources:
           requests:
             storage: 200Mi
