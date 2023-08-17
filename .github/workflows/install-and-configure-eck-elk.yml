@@ -66,6 +66,7 @@ jobs:
             
             - name: Install & configure Elasticsearch
               run: |
+                cat manifests/elasticsearch/elasticsearch-manifest.yml
                 kubectl apply -f manifests/elasticsearch    
 
             - name: Get Elasticsearch PWD
@@ -73,9 +74,8 @@ jobs:
               run: |
                 while [[ $(kubectl get secrets -n logging | grep -c elasticsearch-es-elastic-user) != 1 ]]; do
                   echo "Still waiting for secret creation"
-                  continue
                 done
-                elasticPwd=$(kubectl get secret elasticsearch-es-elastic-user -n logging -o=jsonpath='{.data.elastic}' | base64 --decode)      
+                elasticPwd=$(kubectl get secret elasticsearch-${{ steps.release.outputs.currentVersion }}-es-elastic-user -n logging -o=jsonpath='{.data.elastic}' | base64 --decode)      
                 echo "elasticPwd=$(echo $elasticPwd)" >> $GITHUB_OUTPUT
                 
             - name: Provision the elasticsearch password in the logstash manifest file
