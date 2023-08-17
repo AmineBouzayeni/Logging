@@ -5,6 +5,12 @@ on:
         branches:
             - 'main'
             - 'feature/**'
+
+env:
+  CLUSTER_NAME: dockercoins-cluster-teo
+  CLUSTER_ZONE: europe-west1-b
+  PROJECT_NAME: teolia-school-devops 
+           
 jobs:
     InstallAndConfigureECK:
         runs-on: ubuntu-latest
