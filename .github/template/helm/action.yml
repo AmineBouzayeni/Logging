@@ -7,7 +7,7 @@ runs:
     - name: Create logging namespace
       shell: bash
       run: |
-        kubectl apply -f manifests/logging-namespace.yml
+        kubectl apply -f manifests/namespace/logging-namespace.yml
     - name: Install helm
       shell: bash
       run: |
