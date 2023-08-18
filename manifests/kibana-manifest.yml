@@ -1,0 +1,19 @@
+apiVersion: kibana.k8s.elastic.co/v1
+kind: Kibana
+metadata:
+  name: kibana-__VERSION__
+  namespace: logging
+spec:
+  version: 8.9.0
+  count: 1
+  elasticsearchRef:
+    name: elasticsearch-__VERSION__ # Reference the elasticsearch cluster
+    namespace: logging
+  podTemplate:
+    spec:
+      nodeSelector:
+        app: second  
+  http:
+    service:
+      spec:
+        type: LoadBalancer # Create service of type LoadBalancer to access the kibana dashboard from an external ephemeral IP  

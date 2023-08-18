@@ -1,0 +1,89 @@
+name: Install and configure ECK & ELK stack in the GKE cluster
+run-name: Install and configure ECK & ELK stack
+on: workflow_dispatch
+
+env:
+  CLUSTER_NAME: dockercoins-cluster-teo
+  CLUSTER_ZONE: europe-west1-b
+  PROJECT_NAME: teolia-school-devops 
+           
+jobs:
+    InstallAndConfigureECKandELK:
+        runs-on: ubuntu-latest
+        permissions: write-all
+        steps:
+
+            - name: Checkout code
+              uses: actions/checkout@master
+
+            - name: Authenticate to GKE
+              uses: "./.github/template/authenticate" 
+              with:
+                gcloud_key: ${{ secrets.GCLOUD_KEY }}
+                cluster_name: ${{ env.CLUSTER_NAME }}
+                cluster_zone: ${{ env.CLUSTER_ZONE }}
+                project_name: ${{ env.PROJECT_NAME }}
+            
+            - name: Create release
+              id: create_release
+              uses: './.github/template/release'
+              env:
+                GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+              with:
+                product: logging
+                version: ${{ vars.CURRENT_VERSION }}
+             
+            - name: Replace points by dashes in release string
+              id: release
+              run: |
+                currentVersion=$(echo ${{ vars.CURRENT_VERSION }} | sed 's/\./-/g')
+                echo "currentVersion=$(echo $currentVersion)" >> $GITHUB_OUTPUT
+            
+            - name: Install helm & create logging namespace
+              uses: "./.github/template/helm"  
+              
+            - name: Update elastic search manifest files with the current version
+              uses: cschleiden/replace-tokens@v1
+              with: 
+                files: '["manifests/elasticsearch/**"]'
+                tokenPrefix: __
+                tokenSuffix: __
+              env:
+                VERSION: ${{ steps.release.outputs.currentVersion }}
+
+            - name: Install ECK
+              uses: "./.github/template/install_release"
+              with:
+                repo: https://helm.elastic.co
+                product: elastic-operator
+                version: ${{ steps.release.outputs.currentVersion }}
+                chart: elastic-operator/eck-operator
+                values_path: "empty"
+            
+            - name: Install & configure Elasticsearch
+              run: |
+                kubectl apply -f manifests/elasticsearch    
+
+            - name: Get Elasticsearch PWD
+              id: elastic_pwd
+              run: |
+                while [[ $(kubectl get secrets -n logging | grep -c elasticsearch-${{ steps.release.outputs.currentVersion }}-es-elastic-user) != 1 ]]; do
+                  echo "Still waiting for secret creation"
+                done
+                elasticPwd=$(kubectl get secret elasticsearch-${{ steps.release.outputs.currentVersion }}-es-elastic-user -n logging -o=jsonpath='{.data.elastic}' | base64 --decode)      
+                echo $elasticPwd
+                echo "elasticPwd=$(echo $elasticPwd)" >> $GITHUB_OUTPUT
+                
+            - name: Update the manifests files with current version & provision the elasticsearch password for the logstash manifest file
+              uses: cschleiden/replace-tokens@v1
+              with: 
+                files: '["manifests/**"]'
+                tokenPrefix: __
+                tokenSuffix: __
+              env:
+                ELASTIC_PASSWORD: ${{ steps.elastic_pwd.outputs.elasticPwd }}
+                VERSION: ${{ steps.release.outputs.currentVersion }}
+
+            - name: Install and configure Beat, Logstash & Kibana
+              run: |
+                kubectl apply -f manifests/

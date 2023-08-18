@@ -1,0 +1,47 @@
+apiVersion: logstash.k8s.elastic.co/v1alpha1
+kind: Logstash
+metadata:
+  name: logstash-__VERSION__
+  namespace: logging
+spec:
+  count: 1
+  elasticsearchRefs:
+    - name: elasticsearch-__VERSION__  # Reference the elasticsearch cluster
+      clusterName: elasticsearch
+  version: 8.9.0
+  pipelines:
+    - pipeline.id: main # Inputs: Listen to filebeat on port 5044. Output: to elasticsearch
+      config.string: |
+        input {
+          beats {
+            port => 5044
+          }
+        }
+        filter {
+          grok {
+            match => { "message" => [
+              '%{IP:client_ip} - - %{GREEDYDATA:date} "%{WORD:request_method} %{URIPATHPARAM:request_path} %{GREEDYDATA:http_version}" %{NUMBER:response_code} %{NUMBER:request_size} %{NUMBER:response_time}'
+              ,'%{GREEDYDATA:date} "%{WORD:request_method} %{URIPATHPARAM:request_path} %{GREEDYDATA:http_version}" %{NUMBER:response_code} %{NUMBER:request_size} %{GREEDYDATA:greedy_data}'
+              ,'%{GREEDYDATA:log_level}:%{GREEDYDATA:module}:%{GREEDYDATA:processed_units}, %{GREEDYDATA:action}'
+              ] }
+            }
+          }
+        output {
+          elasticsearch {
+            hosts => [ "https://elasticsearch-__VERSION__-es-internal-http:9200" ]
+            user => "elastic"
+            password => "__ELASTIC_PASSWORD__"
+            ssl_certificate_verification => false
+          }
+        }
+  # Create service logstash-ls-beats:5044 to be reached from filebeat      
+  services:
+    - name: beats
+      service:
+        spec:
+          type: NodePort
+          ports:
+            - port: 5044
+              name: "filebeat-__VERSION__"
+              protocol: TCP
+              targetPort: 5044
