@@ -20,9 +20,9 @@ spec:
         filter {
           grok {
             match => { "message" => [
-              '%{IP:client_ip} - - %{GREEDYDATA:date} "%{WORD:request_method} %{URIPATHPARAM:request_path} %{GREEDYDATA:http_version}" %{NUMBER:response_code} %{NUMBER:request_size} %{NUMBER:response_time}'
-              ,'%{GREEDYDATA:date} "%{WORD:request_method} %{URIPATHPARAM:request_path} %{GREEDYDATA:http_version}" %{NUMBER:response_code} %{NUMBER:request_size} %{GREEDYDATA:greedy_data}'
-              ,'%{GREEDYDATA:log_level}:%{GREEDYDATA:module}:%{GREEDYDATA:processed_units}, %{GREEDYDATA:action}'
+              '%{WORD:log_level} - %{DATA:date} - %{WORD:request_method} - %{URIPATHPARAM:request_path}'
+              ,'[%{DATA:date}] %{WORD:log_level} - %{WORD:function} - %{WORD:request_method} - %{URIPATHPARAM:request_path}'
+              ,'%{DATA:date} - %{WORD:function} - %{WORD:log_level} - %{GREEDYDATA:action}'
               ] }
             }
           }
