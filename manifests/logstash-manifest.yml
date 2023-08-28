@@ -20,9 +20,8 @@ spec:
         filter {
           grok {
             match => { "message" => [
-              '%{WORD:log_level} - %{DATA:date} - %{WORD:request_method} - %{URIPATHPARAM:request_path}'
-              ,'[%{DATA:date}] %{WORD:log_level} - %{WORD:function} - %{WORD:request_method} - %{URIPATHPARAM:request_path}'
-              ,'%{DATA:date} - %{WORD:function} - %{WORD:log_level} - %{GREEDYDATA:action}'
+              '%{DATA:date} %{WORD:log_level} - %{WORD:logger} - %{WORD:request_method} - %{URIPATHPARAM:request_path}'
+              ,'%{DATA:date} - %{WORD:log_level} - %{WORD:logger} - %{GREEDYDATA:action}'
               ] }
             }
           }
