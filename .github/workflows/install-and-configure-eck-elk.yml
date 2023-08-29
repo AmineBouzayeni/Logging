@@ -1,6 +1,6 @@
 name: Install and configure ECK & ELK stack in the GKE cluster
 run-name: Install and configure ECK & ELK stack
-on: [push]
+on: workflow_dispatch
 
 env:
   CLUSTER_NAME: dockercoins-cluster-teo
